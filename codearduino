@@ -1,1 +1,192 @@
-gfhhfh
+#include <AccelStepper.h>
+#include <MultiStepper.h>
+AccelStepper stepperX(1, 2, 5);
+AccelStepper stepperY(1, 3, 6);
+AccelStepper stepperZ(1, 4, 7);
+#define Enable 8
+const float pi = 3.141592654;
+double x,y,z,t,t1,t2,t3,c1,c2,c3,s1,s2,s3;
+float l1=245, l2=200;
+double t11, t22,t33;
+long z1=3200,z2=0;
+
+String s; 
+String hang,cot;
+long ha,co;
+float h,c;
+int X,Y,cpdanh;
+float tamx,tamy;
+int chedo=0;
+float odanh=0;
+
+void setup() 
+{
+  Serial.begin(9600);
+  pinMode(2,OUTPUT);
+  pinMode(5,OUTPUT);
+  pinMode(3,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(4,OUTPUT);
+  pinMode(7,OUTPUT);
+  pinMode(Enable,OUTPUT);
+  stepperX.setMaxSpeed(3000);
+  stepperX.setSpeed(500);
+  stepperX.setAcceleration(2000);
+  stepperY.setMaxSpeed(3000);
+  stepperY.setSpeed(500);
+  stepperY.setAcceleration(2000);
+  stepperZ.setMaxSpeed(3000);
+  stepperZ.setSpeed(500);
+  stepperZ.setAcceleration(3000);
+  digitalWrite(Enable, LOW);
+  stepperX.setCurrentPosition(0);
+  stepperY.setCurrentPosition(0);
+  stepperZ.setCurrentPosition(0);
+}
+
+
+
+
+void tinhvitri(float h, float c){
+  tamx=(h-1)*odanh+(odanh/2);
+  tamy=(c-1)*odanh+(odanh/2);
+  cpdanh=1;
+}
+void danhX(float Px,float Py){
+  danhtheoZ(z1);
+  Px=Px-20;
+  Py=Py-20; 
+  danh(Px,Py);
+  danhtheoZ(z2);
+  for(int t2=1;t2<=50;t2++){
+    Px=Px+0.8;
+    Py=Py+0.8;
+    danh(Px,Py);
+  }
+  danhtheoZ(z1);
+  Px=Px-40;
+  danh(Px,Py);
+  danhtheoZ(z2);
+  for(int t2=1;t2<=50;t2++){
+    Px=Px+0.8;
+    Py=Py-0.8;
+    danh(Px,Py);
+  }
+    danhtheoZ(z1);
+    danhvehome();
+    danhtheoZ(z2); 
+}
+void danhO(float Px,float Py){
+  t=0;
+  danhtheoZ(z1);
+   x=Px+20*cos(0);
+   y=Py+20*sin(0);
+   danh(x,y);
+   danhtheoZ(z2);
+  for(int i=0;i<=200;i++){
+    t=(i*2*pi/200);
+    x=Px+20*cos(t);
+    y=Py+20*sin(t);
+    danh(x,y);
+  }
+  danhtheoZ(z1);
+  danhvehome(); 
+  danhtheoZ(z2); 
+}
+void danh(float x, float y){
+  x=x-150;
+  y=y+145;
+    c2=(pow(x,2)+pow(y,2)-pow(l1,2)-pow(l2,2))/(2*l1*l2);
+    s2=sqrt(abs(1-pow(c2,2)));
+    t2=(atan2(s2,c2)*180/pi)*(12000/360);
+    c1=(l1+l2*c2)*x+l2*s2*y;
+    s1=(l1+l2*c2)*y-l2*s2*x;
+    t1=(atan2(s1,c1)*180/pi)*(12000/360);
+    stepperX.moveTo(t1);
+    stepperY.moveTo(t2);
+    while((stepperX.distanceToGo()!=0)||(stepperY.distanceToGo()!=0))
+  {
+    stepperX.run();
+    stepperY.run();
+  }
+}
+void danhtheoZ(float z){
+    stepperZ.moveTo(z);
+    while(stepperZ.distanceToGo()!=0)
+  {
+    stepperZ.run();
+  }
+}
+void danhvehome(){
+    stepperX.moveTo(0);
+    stepperY.moveTo(0);
+    while((stepperX.distanceToGo()!=0)||(stepperY.distanceToGo()!=0))
+  {
+    stepperX.run();
+    stepperY.run();
+  }
+}
+
+void loop(){
+  s="0";
+  h=0;ha=0;
+  c=0;co=0;
+  cpdanh=0;
+    if (Serial.available() > 0) {
+     s = Serial.readString(); 
+     s.trim(); 
+    }
+  if(s=="X" || s=="O")
+  {
+    if(s=="X"){
+      chedo=1;
+    }
+    if(s=="O"){
+      chedo=2;
+    }
+  }else if(s=="T"||s=="F"||s=="S"||s=="N")
+  {
+    if(s=="T"){
+      odanh=300/3;
+    }
+    else if(s=="F"){
+      odanh=300/5;
+    }
+    else if(s=="S"){
+      odanh=300.000/7.000;
+    }
+    else if(s=="N"){
+       odanh=300.00/9;
+    }
+  }
+  else if(s=="0")
+  {}
+  else
+  {
+     hang=s.substring(0,1);
+     ha=hang.toInt();
+     h=(float)ha;
+     cot=s.substring(1,2);
+     co=cot.toInt();
+     c=(float)co;
+     tinhvitri(h,c);
+  }
+  
+  
+  if(chedo==1){
+    if(cpdanh==1)
+    {
+        danhX(tamx,tamy);
+        cpdanh=0;
+    }}
+  else if(chedo==2){
+    if(cpdanh==1)
+    {
+        danhO(tamx,tamy);
+        cpdanh=0;
+    }}
+    
+}
+
+
+    
